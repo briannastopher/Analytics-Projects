@@ -1,0 +1,782 @@
+---
+title: "consulting project"
+author: "Brianna Stopher"
+date: "2025-06-18"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(rpart)
+library(dplyr)
+library(caret)
+library(rpart.plot)
+library(readxl)
+library(ggplot2)
+
+indy_dec <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_december_media_report.xlsx", sheet = 2)
+table(indy_dec$`Location Category`)
+indy_dec$Sport <- "Ignite"
+colSums(indy_dec[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+## 
+
+```{r}
+# Assuming your original dataframe is called df
+length(indy_dec$`Location Category` == "Local")
+local_df <- indy_dec[indy_dec$`Location Category` == "Local", ]
+local_df
+
+```
+
+```{r}
+colSums(local_df[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+indy_jan <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_ignite_january_media_report_2025-01-01--2025-01-31 (version 1).xlsx", sheet = 2)
+indy_jan$Sport <- "Ignite"
+colSums(indy_jan[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(indy_jan)
+table(indy_jan$`Location Category`)
+local_df2 <- indy_jan[indy_jan$`Location Category` == "Local", ]
+nrow(local_df2)
+colSums(local_df2[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+
+```
+
+```{r}
+indy_feb <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_ignite_february_media_report_2025-02-01--2025-02-28 (version 1).xlsx", sheet = 2)
+indy_feb$Sport <- "Ignite"
+colSums(indy_feb[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(indy_feb)
+table(indy_feb$`Location Category`)
+local_df3 <- indy_feb[indy_feb$`Location Category` == "Local", ]
+nrow(local_df3)
+colSums(local_df3[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+indy_mar <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_ignite_march_media_report_2025-03-01--2025-03-31.xlsx", sheet = 2)
+indy_mar$Sport <- "Ignite"
+colSums(indy_mar[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(indy_mar)
+table(indy_mar$`Location Category`)
+local_df4 <- indy_mar[indy_mar$`Location Category` == "Local", ]
+nrow(local_df4)
+colSums(local_df4[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+indy_apr <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_ignite_april_media_report_2025-04-01--2025-04-30.xlsx", sheet = 2)
+indy_apr$Sport <- "Ignite"
+colSums(indy_apr[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(indy_apr)
+table(indy_apr$`Location Category`)
+local_df5 <- indy_apr[indy_apr$`Location Category` == "Local", ]
+nrow(local_df5)
+colSums(local_df5[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+indy_may <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_ignite_may_media_report_2025-05-01--2025-05-31 (1).xlsx", sheet = 2)
+indy_may$Sport <- "Ignite"
+colSums(indy_may[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(indy_may)
+table(indy_may$`Location Category`)
+local_df6 <- indy_may[indy_may$`Location Category` == "Local", ]
+nrow(local_df6)
+colSums(local_df6[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+df <- data.frame(
+  Month = c("December", "January", "February", "March", "April", "May"),
+  `Local Articles` = c(21, 74, 76, 18, 34, 31),
+  `Local Percentage` = c(100, 35, 47, 23, 50, 36),
+  `Earned Media` = c(109626.45, 1114047.20, 691819.73, 90797.52, 460814.08, 157829.35),
+  `Earned Percentage` = c(55, 4, 10, 2, 5, 4),
+  `Total Engagement` = c(742, 3287, 781, 258, 624, 309),
+  `Local Engagement` = c(742, 2163, 564, 108, 478, 98)
+)
+
+# View the dataframe
+print(df)
+```
+
+```{r}
+library(ggplot2)
+
+df$Month <- factor(df$Month, levels = c("December", "January", "February", "March", "April", "May"))
+
+
+ggplot(df, aes(x = Month, y = Local.Articles, group = 1)) +
+  geom_line(color = "steelblue", size = 1.2) +
+  geom_point(color = "darkblue", size = 3) +
+  labs(title = "Local Articles by Month", y = "Number of Local Articles") +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+ggplot(df, aes(x = Month, y = Earned.Media)) +
+  geom_bar(stat = "identity", fill = "darkgreen") +
+  labs(title = "Earned Media Value by Month", y = "Earned Media ($)") +
+  theme_minimal()
+
+```
+
+```{r}
+library(tidyr)
+
+df_long <- df %>%
+  pivot_longer(cols = c(Local.Engagement, Total.Engagement),
+               names_to = "Engagement Type",
+               values_to = "Value")
+
+ggplot(df_long, aes(x = Month, y = Value, fill = `Engagement Type`)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Local vs Total Engagement", y = "Engagement") +
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(df, aes(x = Month, y = Local.Percentage, group = 1)) +
+  geom_line(color = "orange", size = 1.2) +
+  geom_point(color = "red", size = 3) +
+  labs(title = "Local Media Percentage Over Time", y = "Local %") +
+  theme_minimal()
+
+```
+
+```{r}
+fuel_oct <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_-_oct_2024_2024-10-01--2024-10-31.xlsx", sheet = 2)
+fuel_oct$Sport <- "Fuel"
+colSums(fuel_oct[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_oct)
+table(fuel_oct$`Location Category`)
+fuel_df <- fuel_oct[fuel_oct$`Location Category` == "Local", ]
+nrow(fuel_df)
+colSums(fuel_df[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+fuel_nov <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_-_nov_2024_2024-11-01--2024-11-30.xlsx", sheet = 2)
+fuel_nov$Sport <- "Fuel"
+colSums(fuel_nov[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_nov)
+table(fuel_nov$`Location Category`)
+fuel_df2 <- fuel_nov[fuel_nov$`Location Category` == "Local", ]
+nrow(fuel_df2)
+colSums(fuel_df2[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+fuel_dec <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_dec.xlsx")
+fuel_dec$Sport <- "Fuel"
+colSums(fuel_dec[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_dec)
+table(fuel_dec$`Location Category`)
+fuel_df3 <- fuel_dec[fuel_dec$`Location Category` == "Local", ]
+nrow(fuel_df3)
+colSums(fuel_df3[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+fuel_jan <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_january.xlsx")
+fuel_jan$Sport <- "Fuel"
+colSums(fuel_jan[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_jan)
+table(fuel_jan$`Location Category`)
+fuel_df4 <- fuel_jan[fuel_jan$`Location Category` == "Local", ]
+nrow(fuel_df4)
+colSums(fuel_df4[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+fuel_feb <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_feb.xlsx")
+fuel_feb$Sport <- "Fuel"
+colSums(fuel_feb[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_feb)
+table(fuel_feb$`Location Category`)
+fuel_df5 <- fuel_feb[fuel_feb$`Location Category` == "Local", ]
+nrow(fuel_df5)
+colSums(fuel_df5[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+fuel_mar <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_march.xlsx")
+fuel_mar$Sport <- "Fuel"
+colSums(fuel_mar[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_mar)
+table(fuel_mar$`Location Category`)
+fuel_df6 <- fuel_mar[fuel_mar$`Location Category` == "Local", ]
+nrow(fuel_df6)
+colSums(fuel_df6[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+fuel_apr <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_fuel_april.xlsx", sheet = 2)
+fuel_apr$Sport <- "Fuel"
+colSums(fuel_nov[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(fuel_apr)
+table(fuel_apr$`Location Category`)
+fuel_df7 <- fuel_apr[fuel_apr$`Location Category` == "Local", ]
+nrow(fuel_df7)
+colSums(fuel_df7[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_march <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 2)
+eleven_march$Sport <- "Eleven"
+colSums(eleven_march[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_march)
+table(eleven_march$`Location Category`)
+eleven_df <- eleven_march[eleven_march$`Location Category` == "Local", ]
+nrow(eleven_df)
+colSums(eleven_df[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+file.exists("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx")
+```
+
+```{r}
+eleven_april <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 3)
+eleven_april$Sport <- "Eleven"
+colSums(eleven_april[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_april)
+table(eleven_april$`Location Category`)
+eleven_df2 <- eleven_april[eleven_april$`Location Category` == "Local", ]
+nrow(eleven_df2)
+colSums(eleven_df2[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_may <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 4)
+eleven_may$Sport <- "Eleven"
+colSums(eleven_may[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_may)
+table(eleven_may$`Location Category`)
+eleven_df3 <- eleven_may[eleven_may$`Location Category` == "Local", ]
+nrow(eleven_df3)
+colSums(eleven_df3[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_june <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 5)
+eleven_june$Sport <- "Eleven"
+colSums(eleven_june[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_june)
+table(eleven_june$`Location Category`)
+eleven_df4 <- eleven_june[eleven_june$`Location Category` == "Local", ]
+nrow(eleven_df4)
+colSums(eleven_df4[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_july <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 6)
+eleven_july$Sport <- "Eleven"
+colSums(eleven_july[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_july)
+table(eleven_july$`Location Category`)
+eleven_df5 <- eleven_july[eleven_july$`Location Category` == "Local", ]
+nrow(eleven_df5)
+colSums(eleven_df5[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_aug <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 7)
+eleven_aug$Sport <- "Eleven"
+colSums(eleven_aug[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_aug)
+table(eleven_aug$`Location Category`)
+eleven_df6 <- eleven_aug[eleven_aug$`Location Category` == "Local", ]
+nrow(eleven_df6)
+colSums(eleven_df6[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_sept <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 8)
+eleven_sept$Sport <- "Eleven"
+colSums(eleven_sept[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_sept)
+table(eleven_sept$`Location Category`)
+eleven_df7 <- eleven_sept[eleven_sept$`Location Category` == "Local", ]
+nrow(eleven_df7)
+colSums(eleven_df7[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+```
+
+```{r}
+eleven_oct <- read_excel("C:\\Users\\brian\\OneDrive\\Documents\\Indy Ignite Summer Project\\indy_eleven_reports.xlsx", sheet = 9)
+eleven_oct$Sport <- "Eleven"
+colSums(eleven_oct[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+nrow(eleven_oct)
+table(eleven_oct$`Location Category`)
+eleven_df8 <- eleven_oct[eleven_oct$`Location Category` == "Local", ]
+nrow(eleven_df8)
+colSums(eleven_df8[, c("UVM (Insights by Similarweb)", "Journalist Shares", "Journalist Reach", "Total Engagement")], na.rm = TRUE)
+
+```
+
+```{r}
+sheet_list <- list(indy_dec, indy_jan, indy_feb, indy_mar, indy_apr, indy_may, fuel_oct, fuel_nov, fuel_dec, fuel_jan, fuel_feb, fuel_mar, fuel_apr, eleven_march, eleven_april, eleven_may, eleven_june, eleven_july, eleven_aug, eleven_sept, eleven_oct)
+
+combined_df <- bind_rows(sheet_list)
+head(combined_df)
+colnames(combined_df)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+combined_df %>%
+  filter(!is.na(`Total Engagement`)) %>%
+  mutate(Sport = as.factor(Sport)) %>%
+  ggplot(aes(x = Sport, y = `Total Engagement`)) +
+  geom_point() +
+  labs(title = "Total Engagement by Sport") +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+combined_df %>%
+  filter(!is.na(`Sentiment`)) %>%
+  group_by(Sport, Sentiment) %>%
+  summarise(n = n()) %>%
+  mutate(percent = n / sum(n)) %>%
+  ggplot(aes(x = Sport, y = percent, fill = Sentiment)) +
+  geom_col(position = "fill") +
+  labs(title = "Sentiment Distribution by Sport", y = "Proportion") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_minimal()
+
+```
+
+```{r}
+combined_df %>%
+  group_by(Sport) %>%
+  summarise(
+    avg_reach = mean(`Journalist Reach`, na.rm = TRUE),
+    avg_AVE   = mean(`Advertising Value Equivalency`, na.rm = TRUE),
+    n_articles = n()
+  )
+
+```
+
+```{r}
+ggplot(combined_df, aes(x = `Total Engagement`, y = `Advertising Value Equivalency`, color = Sport)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Engagement vs AVE by Sport") +
+  theme_minimal()
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+combined_df %>%
+  filter(!is.na(Sport), !is.na(`Location Category`)) %>%
+  count(Sport, `Location Category`) %>%
+  ggplot(aes(x = Sport, y = n, fill = `Location Category`)) +
+  geom_col(position = "dodge") +
+  labs(title = "Article Count by Sport",
+       y = "Number of Articles") +
+  theme_minimal()
+
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+combined_df <- combined_df %>%
+  mutate(Month = floor_date(as.Date(Published), "month"))
+
+local_engagement_by_month_sport <- combined_df %>%
+  filter(`Location Category` == "Local", !is.na(`Total Engagement`), !is.na(Month)) %>%
+  group_by(Month, Sport) %>%
+  summarise(Total_Engagement = sum(`Total Engagement`, na.rm = TRUE), .groups = "drop") %>%
+  arrange(Month)
+
+ggplot(local_engagement_by_month_sport, aes(x = Month, y = Total_Engagement, color = Sport)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(title = "Total Engagement for Local Articles by Month",
+       x = "Month",
+       y = "Total Engagement") +
+  theme_minimal()
+
+
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+combined_df <- combined_df %>%
+  mutate(Month = floor_date(as.Date(Published), "month"))
+
+local_article_counts <- combined_df %>%
+  filter(`Location Category` == "Local", !is.na(Month)) %>%
+  group_by(Month, Sport) %>%
+  summarise(Article_Count = n(), .groups = "drop") %>%
+  arrange(Month)
+
+ggplot(local_article_counts, aes(x = Month, y = Article_Count, color = Sport)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(title = "Number of Local Articles by Month",
+       x = "Month",
+       y = "Number of Articles") +
+  theme_minimal()
+
+```
+
+```{r}
+combined_df %>%
+  group_by(Sport) %>%
+  summarise(
+    Total_Articles = n(),
+    Total_AVE = sum(`Advertising Value Equivalency`, na.rm = TRUE),
+    Total_Engagement = sum(`Total Engagement`, na.rm = TRUE),
+    Total_UVM = sum(`UVM (Insights by Similarweb)`, na.rm = TRUE),
+    Local_Percent = mean(`Location Category` == "Local", na.rm = TRUE) * 100
+  )
+
+```
+
+```{r}
+summary(combined_df)
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+combined_df %>%
+  group_by(Sport) %>%
+  summarise(Article_Count = n()) %>%
+  ggplot(aes(x = Sport, y = Article_Count, fill = Sport)) +
+  geom_col() +
+  labs(title = "Total Number of Articles per Sport",
+       x = "Sport",
+       y = "Number of Articles") +
+  theme_minimal()
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+combined_df <- combined_df %>%
+  mutate(Month = floor_date(as.Date(Published), "month"))
+
+local_ave_by_month_sport <- combined_df %>%
+  filter(`Location Category` == "Local",
+         !is.na(`Advertising Value Equivalency`),
+         !is.na(Month)) %>%
+  group_by(Month, Sport) %>%
+  summarise(Total_AVE = sum(`Advertising Value Equivalency`, na.rm = TRUE), .groups = "drop") %>%
+  arrange(Month)
+
+ggplot(local_ave_by_month_sport, aes(x = Month, y = Total_AVE, color = Sport)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(title = "Sum of AVE for Local Articles by Month and Sport",
+       x = "Month",
+       y = "Total AVE (Advertising Value Equivalency)") +
+  theme_minimal()
+
+
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Ensure Month column exists
+combined_df <- combined_df %>%
+  mutate(Month = floor_date(as.Date(Published), "month"))
+
+# Group all articles (no location filter)
+ave_by_month_sport <- combined_df %>%
+  filter(!is.na(`Advertising Value Equivalency`), !is.na(Month)) %>%
+  group_by(Month, Sport) %>%
+  summarise(
+    Total_AVE = sum(`Advertising Value Equivalency`, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(Month)
+
+# Plot
+ggplot(ave_by_month_sport, aes(x = Month, y = Total_AVE, color = Sport)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Sum of AVE for All Articles by Month",
+    x = "Month",
+    y = "Total AVE (Advertising Value Equivalency)"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Ensure Month column exists
+combined_df <- combined_df %>%
+  mutate(Month = floor_date(as.Date(Published), "month"))
+
+# Group by month and sport for all articles (no location filter)
+engagement_by_month_sport <- combined_df %>%
+  filter(!is.na(`Total Engagement`), !is.na(Month)) %>%
+  group_by(Month, Sport) %>%
+  summarise(
+    Total_Engagement = sum(`Total Engagement`, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(Month)
+
+# Plot
+ggplot(engagement_by_month_sport, aes(x = Month, y = Total_Engagement, color = Sport)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Total Engagement for All Articles by Month",
+    x = "Month",
+    y = "Total Engagement"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+scatter_data <- combined_df %>%
+  filter(!is.na(`Advertising Value Equivalency`), 
+         !is.na(`Total Engagement`),
+         `Advertising Value Equivalency` > 0,
+         `Total Engagement` > 0)
+
+ggplot(scatter_data, aes(x = `Advertising Value Equivalency`, y = `Total Engagement`, color = Sport)) +
+  geom_point(alpha = 0.7, size = 2.5) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(
+    title = "AVE vs. Engagement (Log Scale)",
+    x = "Log(Advertising Value Equivalency)",
+    y = "Log(Total Engagement)"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Filter and prepare data
+scatter_data <- combined_df %>%
+  filter(!is.na(`Advertising Value Equivalency`), 
+         !is.na(`Total Engagement`),
+         `Advertising Value Equivalency` > 0,
+         `Total Engagement` > 0)
+
+# Top 1% AVE threshold
+ave_top1_threshold <- quantile(scatter_data$`Advertising Value Equivalency`, 0.9975, na.rm = TRUE)
+
+# Filter for top 1% AVE articles
+top_ave_outliers <- scatter_data %>%
+  filter(`Advertising Value Equivalency` >= ave_top1_threshold) %>%
+  mutate(
+    label_x = `Advertising Value Equivalency`,
+    label_y = `Total Engagement` * 1.5  # Move label above the point
+  )
+
+# Plot
+ggplot(scatter_data, aes(x = `Advertising Value Equivalency`, y = `Total Engagement`, color = Sport)) +
+  geom_point(alpha = 0.7, size = 2.5) +
+  
+  # Add arrow lines from point to label
+  geom_segment(data = top_ave_outliers,
+               aes(x = `Advertising Value Equivalency`,
+                   y = `Total Engagement`,
+                   xend = label_x,
+                   yend = label_y),
+               arrow = arrow(length = unit(0.15, "cm")),
+               color = "gray40") +
+  
+  # Add labels
+  geom_text(data = top_ave_outliers,
+            aes(x = label_x, y = label_y, label = Article),
+            size = 3,
+            hjust = 0.5,
+            vjust = -0.2,
+            color = "black") +
+
+  # Scales
+  scale_x_log10() +
+  scale_y_log10() +
+  
+  # Labels and theme
+  labs(
+    title = "AVE vs. Engagement (Log Scale)",
+    x = "Log(Advertising Value Equivalency)",
+    y = "Log(Total Engagement)"
+  ) +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Step 1: Ensure the Month column is present
+combined_df <- combined_df %>%
+  mutate(
+    Published = as.Date(Published),  # Ensure proper date format
+    Month = floor_date(Published, "month")
+  )
+
+# Step 2: Count articles by month and sport
+article_counts <- combined_df %>%
+  filter(!is.na(Month), !is.na(Sport)) %>%
+  group_by(Month, Sport) %>%
+  summarise(Article_Count = n(), .groups = "drop")
+
+# Step 3: Plot the line graph
+ggplot(article_counts, aes(x = Month, y = Article_Count, color = Sport)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Total Articles by Month and Sport",
+    x = "Month",
+    y = "Number of Articles"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+remove.packages("ggrepel")
+install.packages("ggrepel", dependencies = TRUE)
+
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+combined_df %>%
+  group_by(Sport) %>%
+  summarise(Total_Engagement = sum(`Total Engagement`, na.rm = TRUE)) %>%
+  ggplot(aes(x = Sport, y = Total_Engagement, fill = Sport)) +
+  geom_col() +
+  labs(title = "Total Engagement per Sport",
+       x = "Sport",
+       y = "Total Engagement") +
+  theme_minimal()
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+library(dplyr)
+library(ggplot2)
+
+combined_df %>%
+  group_by(Sport) %>%
+  summarise(Total_AVE = sum(`UVM (Insights by Similarweb)` * 0.025 * 0.35, na.rm = TRUE)) %>%
+  ggplot(aes(x = Sport, y = Total_AVE, fill = Sport)) +
+  geom_col() +
+  labs(title = "Total AVE per Sport",
+       x = "Sport",
+       y = "Total Advertising Value Equivalency (AVE)") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::dollar)
+
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)
+
+# Summarize Total AVE per Sport per Location
+ave_df <- combined_df %>%
+  filter(!is.na(Month)) %>%
+  group_by(Sport, `Location Category`) %>%
+  summarise(
+    Total_AVE = sum(`UVM (Insights by Similarweb)` * 0.025 * 0.35, na.rm = TRUE),
+    .groups = "drop"
+  )
+ggplot(ave_df, aes(x = Sport, y = Total_AVE, fill = `Location Category`)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Total AVE per Sport by Location Category",
+    x = "Sport",
+    y = "Total Advertising Value Equivalency (AVE)"
+  ) +
+  theme_minimal() +
+  scale_y_continuous(labels = dollar)
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+# 1. Summarize Engagement by Sport and Location Category
+engagement_df <- combined_df %>%
+  filter(!is.na(Month)) %>%
+  group_by(Sport, `Location Category`) %>%
+  summarise(
+    Total_Engagement = sum(`Total Engagement`, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 2. Plot grouped bar chart
+ggplot(engagement_df, aes(x = Sport, y = Total_Engagement, fill = `Location Category`)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Total Engagement per Sport by Location Category",
+    x = "Sport",
+    y = "Total Engagement"
+  ) +
+  scale_y_continuous(labels = comma) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
