@@ -8,4 +8,12 @@ Hello! My name is Brianna Stopher. I am an aspiring sports analyst with a B.S. i
 2. Summer Consulting Project Turning Media Mentions into Sponsorship Targeting
 3. Big Data Bowl Submission
 
-# 
+# Key Technical Skills
+- Machine Learning and Statistical Analysis in R and Python
+- Database Formation
+- Analysis using geospatial data, play-by-play, and tracking data
+- Creation of retention and win probability models
+
+# Contact Information
+Email: brianna.stopher@gmail.com
+LinkedIn: https://www.linkedin.com/in/brianna-stopher-020833273/
