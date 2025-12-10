@@ -1,0 +1,77 @@
+---
+title: "Data Dive 6"
+author: "Brianna Stopher"
+date: "2024-11-29"
+output: html_document
+---
+
+```{r}
+library(tsibble)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+```{r}
+kill_data <- volley_data |>
+  select(w_p1_tot_attacks, w_p1_tot_kills, w_p1_tot_errors) |>
+  mutate(w_p1_kill_pct = (w_p1_tot_kills - w_p1_tot_errors)/ w_p1_tot_attacks) |>
+  na.omit(kill_data)
+
+head(kill_data)
+```
+
+```{r}
+plot(kill_data$w_p1_tot_attacks, kill_data$w_p1_kill_pct,
+     main = "Total Attacks vs Kill Percentage",
+     xlab = "Total Attacks",
+     ylab = "Kill Percentage",
+     pch = 19, col = "blue")
+```
+
+```{r}
+plot(kill_data$w_p1_tot_kills, kill_data$w_p1_kill_pct,
+     main = "Total Kills vs Kill Percentage",
+     xlab = "Total Kills",
+     ylab = "Kill Percentage",
+     pch = 19, col = "blue")
+```
+
+```{r}
+plot(kill_data$w_p1_tot_errors, kill_data$w_p1_kill_pct,
+     main = "Total Errors vs Kill Percentage",
+     xlab = "Total Errors",
+     ylab = "Kill Percentage",
+     pch = 19, col = "blue")
+```
+
+These plots show the relationship between kill percentage and each of the variables that contributes to its calculation. It looks like as total attacks and total errors increases, the average kill percentage decreases. Total kills is averaged between 10-20 with some outliers. Generally as kills increase, we would expect the kill percentage to increase but it does not look like there is a clear trend.
+
+```{r}
+cor_attacks <- cor(kill_data$w_p1_tot_attacks, kill_data$w_p1_kill_pct)
+cor_attacks
+
+cor_kills <- cor(kill_data$w_p1_tot_kills, kill_data$w_p1_kill_pct)
+cor_kills
+
+cor_errors <- cor(kill_data$w_p1_tot_errors, kill_data$w_p1_kill_pct)
+cor_errors
+```
+
+```{r}
+kill_mean <- mean(kill_data$w_p1_kill_pct)
+kill_sd <- sd(kill_data$w_p1_kill_pct)
+kill_n <- nrow(kill_data)
+kill_se <- kill_sd / sqrt(kill_n)
+kill_ci <- qt(0.975, df = kill_n - 1)* kill_se
+kill_ci_low <- kill_mean - kill_ci
+kill_ci_up <- kill_mean + kill_ci
+
+cat("95% Confidence Interval for Kill Percentage : (", kill_ci_low, ", ", kill_ci_up, ")")
+```
+
+Based on these calculations, we can conclude that as a player has more attacks or errors, their kill percentage decreases. As a player has more kills, their kill percentage increases. The confidence interval shows that 95% of the time the mean kill percentage will fall within the interval (.447, .473). This is reasonable to assume that on average, winning players will have just under a 50% kill percentage.

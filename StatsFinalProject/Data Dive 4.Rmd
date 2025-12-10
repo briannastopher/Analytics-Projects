@@ -1,0 +1,147 @@
+---
+title: "Data Dive 4"
+output: html_document
+date: "2024-09-19"
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+```{r}
+n_samples <- 5
+samp_size <- round(nrow(volley_data) * 0.5)
+
+for (i in 1:n_samples) {
+  samp_data <- volley_data[sample(nrow(volley_data), size = samp_size, replace = TRUE), ]
+  assign(paste0("df_", i), samp_data, envir = .GlobalEnv)
+}
+```
+
+In this code we established the samples and stored them in separate data frames so that we can easily evaluate them. The samples were chosen with replacement and stored in data frames.
+
+```{r}
+df_summary1 <- df_1 |>
+  group_by(circuit) |>
+  count(country) |>
+  arrange(n)
+df_summary1
+
+df_summary2 <- df_2 |>
+  group_by(circuit) |>
+  count(country) |>
+  arrange(n)
+df_summary2
+
+df_summary3 <- df_3 |>
+  group_by(circuit) |>
+  count(country) |>
+  arrange(n)
+df_summary3
+
+df_summary4 <- df_4 |>
+  group_by(circuit) |>
+  count(country) |>
+  arrange(n)
+df_summary4
+
+df_summary5 <- df_5 |>
+  group_by(circuit) |>
+  count(country) |>
+  arrange(n)
+df_summary5
+```
+
+We could look at many different variables to assess the differences in this sample but the one I chose was to count the matches from each country. It is interesting to look at the differences in country count because in each sample we have a very different order of least to most matches played. I did group by circuit first and the US is the only country to play AVP circuit matches and they also have the most matches in all samples which is not surprising given it had the highest overall matches by far in the total data set. Korea also has the least number of matches in all samples. Aside from these two, the order changes a lot in each sample. This is interesting to see because each sample by itself is not always a great representation of the total data set, but as we take more and more, the average of the samples usually gives a good summary.
+
+```{r}
+df_sum1 <- df_1 |>
+  group_by(country) |>
+  summarise(meanage = mean(w_p1_age, na.rm = TRUE)) |>
+  arrange(desc(meanage))
+df_sum1
+
+df_sum2 <- df_2 |>
+  group_by(country) |>
+  summarise(meanage = mean(w_p1_age, na.rm = TRUE)) |>
+  arrange(desc(meanage))
+df_sum2
+
+df_sum3 <- df_3 |>
+  group_by(country) |>
+  summarise(meanage = mean(w_p1_age, na.rm = TRUE)) |>
+  arrange(desc(meanage))
+df_sum3
+
+df_sum4 <- df_4 |>
+  group_by(country) |>
+  summarise(meanage = mean(w_p1_age, na.rm = TRUE)) |>
+  arrange(desc(meanage))
+df_sum4
+
+df_sum5 <- df_5 |>
+  group_by(country) |>
+  summarise(meanage = mean(w_p1_age, na.rm = TRUE)) |>
+  arrange(desc(meanage))
+df_sum5
+```
+
+I also decided to look at age since that is something that I have been looking into in the past data dives. It is interesting how different the mean ages for one player are within the samples. I was able to compare these to the whole sample and some of the ages are much different than the mean of the entire data set.
+
+```{r}
+ggplot(df_1, aes(x = country, y = w_p1_age)) +
+  geom_boxplot() +
+  labs(title="Mean Age by Country") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(df_2, aes(x = country, y = w_p1_age)) +
+  geom_boxplot() +
+  labs(title="Mean Age by Country") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(df_3, aes(x = country, y = w_p1_age)) +
+  geom_boxplot() +
+  labs(title="Mean Age by Country") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(df_4, aes(x = country, y = w_p1_age)) +
+  geom_boxplot() +
+  labs(title="Mean Age by Country") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(df_5, aes(x = country, y = w_p1_age)) +
+  geom_boxplot() +
+  labs(title="Mean Age by Country") +
+  theme_minimal()
+```
+
+In sample one, we see many anomalies. These can be seen on the graph by the points not connected to the box plots. In this specific sample, the most obvious anomoly is the player that is almost 50 in the United States.
+
+In sample 2, we have a player that is about 55 from Belgium that is definitely an outlier to the rest of the data, especially since the mean age in Belgium is about 26.
+
+There is a high value from Australia in the box plot for sample 3, and we also still see the higher values in Belgium and the United States. In comparison to the mean values, these are all anomolies and values that we would doubt. France also has a very low mean which is off from it's mean in the total dataset.
+
+Samples 4 and 5 also contain many anomolies like the other samples. We can see all of these on the box plot and these are points that we would want to look into to make sure that they were in our original data set and that they make sense. In the data set we do have players birthdays, so we may want to verify that these points are correct using this.
+
+This data dive was informative to the fact that samples of a population are not always great representations of the entire population. The samples are not too far off, but we should still not form conclusions based off of a single sample. As we collect more samples, we can find averages of the samples that represent our entire data set better, but single samples could be misleading if we try to conclude things about all of the data.

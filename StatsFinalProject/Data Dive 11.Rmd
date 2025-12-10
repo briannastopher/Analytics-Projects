@@ -1,0 +1,85 @@
+---
+title: "Data Dive 11"
+author: "Brianna Stopher"
+date: "2024-11-15"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(boot)
+library(lindia)
+library(ggthemes)
+library(ggrepel)
+```
+
+## Linear Regression
+
+Built with the explanatory variables- w_p1_tot_attacks, w_p1_tot_kills, w_p1_tot_errors
+
+and the response variable- w_p1_tot_hitpct
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+```{r}
+model <- lm(w_p1_tot_hitpct ~ w_p1_tot_attacks + w_p1_tot_kills + w_p1_tot_errors, data = volley_data)
+summary(model)
+```
+
+### Interpreting Coefficients
+
+The intercept (0.4674398) is the baseline hitting percentage of winning player 1. The three values below this show the amount to which each factor affects the hitting percentage. In other words, for every increase in total attack, a players hitting percentage generally decreases by 0.0159347. For every additional kill, a players hitting percentage increases by 0.0354294. And finally for every additional error, a players hitting percentage decreases by 0.0356809.
+
+The R- squared value of .87 means that approximately 87% of the variability in hitting percentage is explained by the model/ explanatory variables.
+
+```{r}
+plot(model$residuals, main = 'Residuals Plot', ylab = 'Residuals', xlab = 'Index')
+abline(h = 0, col = 'red')
+```
+
+### Model Diagnosis
+
+#### Residuals vs Fitted
+
+This plot shows that the variance of the residuals is not necessarily constant. Ideally the points should be scattered around the x axis if the relationship is linear and the residuals have equal variance.
+
+```{r}
+plot(model, which = 1)
+```
+
+This plot shows that the relationship may not be perfectly linear which makes it difficult to create an accurate regression model.
+
+#### Normal Q-Q Plot
+
+For the most part, the residuals lie on the straight line which is a good sign and means that they are somewhat normally distributed.
+
+```{r}
+plot(model, which = 2)
+```
+
+This plot shows that the residuals are not normally distributed. The tails curving away from the straight line show that there are some extreme values that may affect the data. The data not being normally distributed means that a linear regression may not be the best way to assess the data.
+
+#### Scale- Location Plot
+
+Ideally the residuals would be constant across all fitted values, but in this case, they seem to be concentrated between .4-.6 and not very consistent otherwise.
+
+```{r}
+plot(model, which = 3)
+```
+
+The concentration of values in one area suggests nonlinearity in our model or it may mean that the model is being affected by outliers.
+
+#### Residuals vs Leverage Plot
+
+This model helps show us points that could be considered influential to our model. We see a few that really stray from the bulk of the Cook's distance lines.
+
+```{r}
+plot(model, which = 5)
+```
+
+For the most part, all of the data points cluster around the horizontal 'zero' line which means that they are not problematic or influential. We do see an influential point labeled 51. We need to evaluate the cause of this point and it may be removed to more accurately assess the data.

@@ -1,0 +1,145 @@
+---
+title: "Data Dive 9"
+author: "Brianna Stopher"
+date: "2024-10-28"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(boot)
+library(lindia)
+library(ggthemes)
+library(ggrepel)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+## Original Model
+
+```{r}
+clean_data3 <- na.omit(volley_data[, c('w_p1_tot_kills', 'w_p1_hgt', 'w_p1_tot_aces', 'w_p1_tot_blocks', 'w_p1_country', 'w_player1')])
+
+model_1 <- lm(w_p1_hgt ~ w_p1_tot_kills, data = clean_data3) |> summary()
+model_1
+
+clean_data3 |>
+  ggplot(mapping = aes(x = w_p1_hgt, y = w_p1_tot_kills)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE, color = 'darkblue')
+```
+
+```{r}
+cor(clean_data3[c('w_p1_tot_kills', 'w_p1_tot_aces', 'w_p1_tot_blocks')])
+```
+
+## Model + Aces
+
+```{r}
+model_2 <- lm(w_p1_hgt ~ w_p1_tot_kills + w_p1_tot_aces, data = clean_data3) |> summary()
+model_2
+```
+
+## Model + Blocks
+
+```{r}
+model_3 <- lm(w_p1_hgt ~ w_p1_tot_kills + w_p1_tot_blocks, data = clean_data3) |> summary()
+model_3
+```
+
+```{r}
+model_4 <- lm(w_p1_hgt ~ w_p1_tot_kills + w_p1_country, data = clean_data3) |> summary()
+model_4
+```
+
+## Model \* Blocks
+
+```{r}
+model_5 <- lm(w_p1_hgt ~ w_p1_tot_kills * w_p1_tot_blocks, data = clean_data3) |> summary()
+model_5
+```
+
+### Plotting R Squared
+
+```{r}
+rsq = c(model_1$r.squared, model_2$r.squared, model_3$r.squared, model_4$r.squared, model_5$r.squared)
+rsqadj = c(model_1$adj.r.squared, 
+      model_2$adj.r.squared, 
+      model_3$adj.r.squared,
+      model_4$adj.r.squared,
+      model_5$adj.r.squared)
+list_name = c('kills', '+aces', '+blocks', '+country', '*blocks')
+list = c(1,2,3,4,5)
+
+ggplot() +
+  geom_line(mapping = aes(x = list, y = rsq, color = 'r_sq')) +
+  geom_line(mapping = aes(x = list, y = rsqadj, color = 'r_sq_adj')) +
+  #scale_x_discrete(labels = list_name)
+  labs(title = "R squared vs R squared adjusted for different lr models",
+       x = "tests:: 1: kills, 2: +aces, 3: +blocks, 4: +country, 5: *blocks",
+       y = "value") +
+  theme_minimal()
+```
+
+All variables look to improve the model, with the least of which with blocks as an interaction variable. There was about a .1 change in r squared value when these additional variables are included.
+
+### Evaluating the Model
+
+Total number of kills and blocks having a positive relation with player height makes sense. We would assume that these things move proportionally. Meaning, players that are taller often earn more kills and blocks. Using diagnostic plots we can further evaluate this.
+
+### Residuals
+
+```{r}
+model = lm(w_p1_hgt ~ w_p1_tot_kills * w_p1_tot_blocks, clean_data3)
+
+gg_resfitted(model) +
+  geom_smooth(se = FALSE)
+```
+
+```{r}
+plot<- gg_resX(model, plot.all= FALSE)
+plot$w_p1_tot_kills +
+  geom_smooth(se = FALSE)
+```
+
+```{r}
+plot$w_p1_tot_blocks +
+  geom_smooth(se = FALSE)
+```
+
+#### Histogram
+
+```{r}
+gg_reshist(model)
+```
+
+```{r}
+x <- model$residuals
+x_val <- seq(min(x), max(x), length= 40)
+fun <- dnorm(x_val, mean = mean(x), sd = sd(x))
+hist(x, breaks= 50)
+lines(x_val, fun*18000000)
+```
+
+This is not a normal distribution, but instead a bimodal distribution. This means that the data points are distributed across two separate values. In our case this makes sense because players may have more kills than blocks, or more blocks than kills and the number is hardly ever equal.
+
+#### QQ Plot
+
+```{r}
+gg_qqplot(model)
+```
+
+The data hardly fits the theoretical distribution and lies mostly above and below the line. It looks like there are an equal number of values above and below the line which goes along with our findings in the histogram.
+
+Cooks D
+
+```{r}
+gg_cooksd(model, threshold = 'matlab')
+```
+
+The highest columns are 'highly influential rows'. These are most likely players that have significantly more kills than blocks or vice versa.

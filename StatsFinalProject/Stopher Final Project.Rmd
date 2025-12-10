@@ -1,0 +1,736 @@
+---
+title: "Final Project"
+author: "Brianna Stopher"
+date: "2024-11-23"
+output: html_document
+---
+
+My final project is centered on determining if certain in- game statistics affect the outcome of a volleyball game more than others. I will be assessing four different statistics: total kills, total aces, total blocks, and total digs. This will use the same beach volleyball dataset used in all of my data dives, which seems to be a dataset for machine learning purposes, which makes it more ideal for determining the differences in statistics.
+
+First, the dataset and necessary libraries were loaded in:
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggthemes)
+library(ggplot2)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+One limitation of my data set is that there is only in-game statistic data for the matches that were played in the United States so a lot of null data had to be filtered out in order to get accurate results.
+
+The first analysis that I chose to do was to look at the different statistics by gender. I created histograms for each of the skills and filled by gender so that the trends can be seen visually. A histogram was created for the winning team and the losing team for each skill for further analysis.
+
+# In-Game Statistics by Gender
+
+### Kills
+
+```{r}
+killdata <- volley_data |>
+  group_by(gender) |>
+  select(w_p1_tot_kills, w_p2_tot_kills, l_p2_tot_kills, l_p1_tot_kills, gender)
+
+kill_data_2 <- killdata |>
+  na.omit() |>
+  mutate(
+    win_kills = w_p1_tot_kills + w_p2_tot_kills,
+    lose_kills = l_p1_tot_kills + l_p2_tot_kills,
+    tot_kills = win_kills + lose_kills
+  )
+  
+
+ggplot(kill_data_2, aes(x = win_kills, fill = gender)) +
+  geom_histogram(binwidth = 5, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(win_kills, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = "Winning Team Kills", x = "Total Kills", y = "Count") +
+  theme_minimal()
+
+ggplot(kill_data_2, aes(x= lose_kills, fill = gender)) +
+  geom_histogram(binwidth = 5, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(lose_kills, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = "Losing Team Kills", x = "Total Kills", y = "Count") +
+  theme_minimal()
+
+kill_data_2 |>
+  group_by(gender) |>
+  summarise(mean(win_kills), mean(lose_kills), mean(tot_kills))
+```
+
+The graph shows that winning teams average about 30 kills with the womens average being 29.15 and the mens being 30.07. We also see that men average about 57 kills per match, while there is an average of 55 in a womens match. I had predicted a difference in kills between the mens and womens matches and the results line up with my ideas.
+
+For the losing team, we see that the average is about 26 kills with the womens average being 25.40 and the mens being 26.68. While again we can see that there is not a great difference between genders, we can see that there is a difference of about 4 kills between losing teams and winning teams.
+
+To determine if there is statistical evidence that supports rejecting the idea that the difference in kills is due to random chance, we must do some hypothesis testing. The null hypothesis is that there is no difference between the mean number of kills for men and women. I will use a 2- sample t- test with a p-value of .05 which implies that there is a 5% chance of the difference happening due to chance. This is the standard for rejecting the null hypothesis.
+
+```{r}
+test1 <- t.test(tot_kills ~ gender, data = kill_data_2)
+test1
+```
+
+The p-value is .05649 which means that there is about a 5.65% chance that the observed difference in mens and womens kills is not statistically significant and we can assume that the null hypothesis is true. We can conclude that the number of kills is not different between genders, but with the p-value being so close this is something that could use more analysis.
+
+### Aces
+
+```{r}
+acedata <- volley_data |>
+  group_by(gender) |>
+  select(w_p1_tot_aces, w_p2_tot_aces, l_p2_tot_aces, l_p1_tot_aces, gender)
+
+acedata_2 <- acedata %>%
+  na.omit() |>
+  mutate(
+    win_aces = w_p1_tot_aces + w_p2_tot_aces,
+    lose_aces = l_p1_tot_aces + l_p2_tot_aces,
+    tot_aces = win_aces + lose_aces
+  )
+
+ggplot(acedata_2, aes(x = win_aces, fill = gender)) +
+  geom_histogram(binwidth = 1, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(win_aces, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = "Winning Team Aces", x = "Total Aces", y = "Count") +
+  theme_minimal()
+
+ggplot(acedata_2, aes(x= lose_aces, fill= gender)) +
+  geom_histogram(binwidth = 1, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(lose_aces, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = "Losing Team Aces", x = "Total Aces", y = "Count") +
+  theme_minimal()
+
+acedata_2 |>
+  group_by(gender) |>
+  summarise(mean(win_aces), mean(lose_aces), mean(tot_aces))
+```
+
+The first graph shows that winning teams average about 2.5 aces with the womens average being 2.93 and the mens being 2.35. We also see that men average about 3.86 total aces per match, while there is an average of 4.81 in a womens match. My prediction was that women have more aces per game and this aligns with the analysis thus far.
+
+For the losing team, we see that the average is about 1.5 aces with the womens average being 1.88 and the mens being 1.50. While again we can see that there is not a great difference between genders, we can see that there is a difference of about 1 ace between losing teams and winning teams.
+
+To determine if there is statistical evidence that supports rejecting the idea that the difference in aces is due to random chance, we must do some hypothesis testing. The null hypothesis is that there is no difference between the mean number of aces for men and women. I will use a 2- sample t- test with a p-value of .05 which implies that there is a 5% chance of the difference happening due to chance. This is the standard for rejecting the null hypothesis.
+
+```{r}
+test2 <- t.test(tot_aces ~ gender, data = acedata_2)
+test2
+```
+
+The p-value is .00001892 which means that there is about a .002% chance that the observed difference in mens and womens aces is not statistically significant and we can reject the null hypothesis. This means that we accept the alternative hypothesis which is that the true difference in mean aces between men and women is not equal to zero. This test indicates that women have between .52-1.39 more aces in a match than men do.
+
+### Blocks
+
+```{r}
+blockdata <- volley_data |>
+  group_by(gender) |>
+  select(w_p1_tot_blocks, w_p2_tot_blocks, l_p2_tot_blocks, l_p1_tot_blocks, gender)
+
+blockdata_2 <- blockdata |>
+  na.omit() |>
+  mutate(
+    win_blocks = w_p1_tot_blocks + w_p2_tot_blocks,
+    lose_blocks = l_p1_tot_blocks + l_p2_tot_blocks,
+    tot_blocks = win_blocks + lose_blocks
+  )
+
+ggplot(blockdata_2, aes(x = win_blocks, fill = gender)) +
+  geom_histogram(binwidth = 1, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(win_blocks, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = 'Winning Team Blocks', x = 'Total Blocks', y = 'Count') +
+  theme_minimal()
+
+ggplot(blockdata_2, aes(x= lose_blocks, fill = gender)) +
+  geom_histogram(binwidth = 1, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(lose_blocks, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = 'Losing Team Blocks', x = 'Total Blocks', y = 'Count') +
+  theme_minimal()
+
+blockdata_2 |>
+  group_by(gender) |>
+  summarise(mean(win_blocks), mean(lose_blocks), mean(tot_blocks))
+```
+
+The first graph shows that winning teams average about 3 blocks with the womens average being 2.84 and the mens being 3.54. We also see that men average about 6.30 total blocks per match, while there is an average of 4.54 in a womens match. My prediction was that men have more blocks per game and this aligns with the data.
+
+For the losing team, we see that the average is about 2 blocks with the womens average being 1.70 and the mens being 2.77. While again we can see that there is not a great difference between genders, we can see that there is a difference of about 1 block between losing teams and winning teams.
+
+To determine if there is statistical evidence that supports rejecting the idea that the difference in blocks is due to random chance, we must do some hypothesis testing. The null hypothesis is that there is no difference between the mean number of blocks for men and women. I will use a 2- sample t- test with a p-value of .05 which implies that there is a 5% chance of the difference happening due to chance. This is the standard for rejecting the null hypothesis.
+
+```{r}
+test3 <- t.test(tot_blocks ~ gender, data = blockdata_2)
+test3
+```
+
+The p-value is 1.433e-12 which is very small and shows that there is a extremely low chance that the observed difference in mens and womens blocks is not statistically significant and we can reject the null hypothesis. This means that we accept the alternative hypothesis which is that the true difference in mean blocks between men and women is not equal to zero. The test indicates that men average between 1.29-2.25 more blocks in a game than women.
+
+### Digs
+
+```{r}
+digdata <- volley_data |>
+  group_by(gender) |>
+  select(w_p1_tot_digs, w_p2_tot_digs, l_p2_tot_digs, l_p1_tot_digs, gender)
+
+dig_data_2 <- digdata |>
+  na.omit() |>
+  mutate(
+    win_digs = w_p1_tot_digs + w_p2_tot_digs,
+    lose_digs = l_p1_tot_digs + l_p2_tot_digs,
+    tot_digs = win_digs + lose_digs
+  )
+  
+
+ggplot(dig_data_2, aes(x = win_digs, fill = gender)) +
+  geom_histogram(binwidth = 5, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(win_digs, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = "Winning Team Digs", x = "Total Digs", y = "Count") +
+  theme_minimal()
+
+ggplot(dig_data_2, aes(x= lose_digs, fill = gender)) +
+  geom_histogram(binwidth = 5, position = 'dodge') +
+  scale_fill_manual(values = c('lightblue', 'pink')) +
+  geom_vline(aes(xintercept = mean(lose_digs, na.rm = TRUE)),
+             color = "black", linetype = "dashed", linewidth = 1) +
+  labs(title = "Losing Team Digs", x = "Total Digs", y = "Count") +
+  theme_minimal()
+
+dig_data_2 |>
+  group_by(gender) |>
+  summarise(mean(win_digs), mean(lose_digs), mean(tot_digs))
+```
+
+The first graph shows that winning teams average about 16 digs with the womens average being 18.83 and the mens being 14.55. We also see that men average about 26.52 total digs per match, while there is an average of 34.97 in a womens match. My prediction was that women have more digs per game and this aligns with the data.
+
+For the losing team, we see that the average is about 14 digs with the womens average being 16.14 and the mens being 11.97. This is the largest difference we have seen between genders at about 5 digs, and a difference of about 2 digs between winning and losing teams.
+
+To determine if there is statistical evidence that supports rejecting the idea that the difference in digs is due to random chance, we must do some hypothesis testing. The null hypothesis is that there is no difference between the mean number of digs for men and women. I will use a 2- sample t- test with a p-value of .05 which implies that there is a 5% chance of the difference happening due to chance. This is the standard for rejecting the null hypothesis.
+
+```{r}
+test4 <- t.test(tot_digs ~ gender, data = dig_data_2)
+test4
+```
+
+The p-value is 2.2e-16 which is very small and shows that there is a extremely low chance that the observed difference in mens and womens digs is not statistically significant and we can reject the null hypothesis. This means that we accept the alternative hypothesis which is that the true difference in mean digs between men and women is not equal to zero. The test indicates that women average between 6.60-10.30 more digs in a game than men.
+
+## Conclusions for In-Game Statistics by Gender
+
+After completing analysis, we can see that only one of the skills was not different between mens and womens. Mean kills between the genders was proven to not be statistically significant and therefore we can only conclude that there is no significant difference. However, when evaluating blocks, aces, and digs, the difference in averages between men and women was proven to be statistically significant. We see that women average more digs and aces per match, while men average more blocks. The results for digs and blocks was definitive with extremely small p-values. The analysis for aces was not as definitive but still provided a p-value that helped us to obviously reject the null hypothesis.
+
+## Limitations
+
+When comparing genders it is important to also keep in mind the physical limitations. First, we must acknowledge that the average height of male players is about 5 inches taller than women. The net for men's matches is higher to account for this, but it is something to keep in mind. There are also factors that we do not have measurements for such as strength, vertical, or reach that also can affect these skills.
+
+```{r}
+volley<- volley_data |>
+  group_by(gender) |>
+  mutate(height = (w_p1_hgt + w_p2_hgt + l_p1_hgt + l_p2_hgt) / 4) |>
+  summarise(Mean_Height = mean(height, na.rm = TRUE), .groups = 'drop')
+print(volley)
+```
+
+## Actionable Recommendations
+
+With this analysis, I would have a few difference recommendations. We could look at these conclusions in two different ways: each gender should focus on the specific skills that they excel at, or they can focus on improving on the skills that they average lower on. I believe that women would benefit from focusing on attacking and blocking since typically they average lower in these areas. A women's team that blocks well may excel against other teams since women do not typically have as many blocks per match. On the other hand, I would recommend that male players focus training on serving and defense. The analysis shows that men's teams do not typically get as many digs, so a skilled defensive team could have more success against their counterparts.
+
+# In-Game Statistics by Age
+
+To complete this next section of analysis I created a new subset that divides the age into categories so I am able to complete ANOVA testing on the data. I divided the age column into five categories so that each in-game statistic could be evaluated for each. The majority of the data will lie in the categories of age between 20-50 years old, but I included the others for the outliers. They will be excluded if there is no data. I then had to manipulate my data to create a column for each statistic that included all four players in the match.
+
+```{r}
+avg_win_age <- (volley_data$w_p1_age + volley_data$w_p2_age) / 2
+avg_lose_age <- (volley_data$l_p1_age + volley_data$l_p2_age) / 2
+
+agedata <- volley_data |>
+  mutate(ages = case_when(
+    w_p1_age <= 20 ~ "Under 20",
+    w_p1_age <= 30 ~ "20-30",
+    w_p1_age <= 40 ~ "30-40",
+    w_p1_age <= 50 ~ "40-50",
+    TRUE ~ "50 and Up"
+    ),
+  ages2 = case_when(
+    w_p2_age <= 20 ~ "Under 20",
+    w_p2_age <= 30 ~ "20-30",
+    w_p2_age <= 40 ~ "30-40",
+    w_p2_age <= 50 ~ "40-50",
+    TRUE ~ "50 and Up"
+    ),
+  ages3 = case_when(
+    l_p1_age <= 20 ~ "Under 20",
+    l_p1_age <= 30 ~ "20-30",
+    l_p1_age <= 40 ~ "30-40",
+    l_p1_age <= 50 ~ "40-50",
+    TRUE ~ "50 and Up"
+    ),
+  ages4 = case_when(
+    l_p2_age <= 20 ~ "Under 20",
+    l_p2_age <= 30 ~ "20-30",
+    l_p2_age <= 40 ~ "30-40",
+    l_p2_age <= 50 ~ "40-50",
+    TRUE ~ "50 and Up"
+    ),
+  age_w_p1_stats = paste(ages, w_p1_tot_kills, w_p1_tot_aces, w_p1_tot_blocks, w_p1_tot_digs, sep = ": "),
+  age_w_p2_stats = paste(ages2, w_p2_tot_kills, w_p2_tot_aces, w_p2_tot_blocks, w_p2_tot_digs, sep = ": "),
+  age_l_p1_stats = paste(ages3, l_p1_tot_kills, l_p1_tot_aces, l_p1_tot_blocks, l_p1_tot_digs, sep = ": "),
+  age_l_p2_stats = paste(ages4, l_p2_tot_kills, l_p2_tot_aces, l_p2_tot_blocks, l_p2_tot_digs, sep = ": ")
+  ) |>
+  select(age_w_p1_stats, age_w_p2_stats, age_l_p1_stats, age_l_p2_stats) |>
+  pivot_longer(cols = c(age_w_p1_stats, age_w_p2_stats, age_l_p1_stats, age_l_p2_stats), 
+               names_to = "players", 
+               values_to = "age_group") |>
+  separate(age_group, into = c("age", "kills", "aces", "blocks", "digs"), sep = ": ") |>
+  na.omit()
+agedata$kills <- as.numeric(agedata$kills)
+agedata$aces <- as.numeric(agedata$aces)
+agedata$blocks <- as.numeric(agedata$blocks)
+agedata$digs <- as.numeric(agedata$digs)
+
+```
+
+### Kills
+
+```{r}
+agedata_clean <- na.omit(agedata)
+
+agedata_clean |>
+  ggplot() +
+  geom_boxplot(mapping = aes(y = kills, x = age, fill = age), 
+               color = "black",
+               alpha = 0.6) +
+  scale_y_log10() +
+  annotation_logticks(sides = 'l') +
+  labs(title = "Total Kills by Age Group",
+       x = "Age Group",
+       y = "Total Kills (log scale)") +
+  geom_text(
+    data = agedata_clean |>
+      group_by(age) |>
+      summarise(mean_kills = mean(kills, na.rm = TRUE)),
+    aes(x = age, y = mean_kills, label = paste("Mean:", round(mean_kills, 1))),
+    color = "black",
+    size = 3,
+    vjust = -0.5,
+    hjust = 0.5
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set3")
+
+
+```
+
+The above box plot uses individual data from the subset about a single players kills and associated age group. The box plot does not show that there is any significant differences between age groups but in order to further assess the differences we will conduct an anova test and pairwise t test. The null hypothesis for this test is that there is no difference in mean kills between age groups. We will also use a p-value of .05 as I did in the previous hypothesis tests as the standard for rejecting the null hypothesis.
+
+```{r}
+killtest <- aov(kills ~ age, data = agedata)
+summary(killtest)
+
+pairwise.t.test(agedata$kills, agedata$age, p.adjust.method = "bonferroni")
+```
+
+```{r}
+agedata_clean <- na.omit(agedata)
+
+boot_ci <- function(v, func = median, conf = 0.95, n_iter = 100) {
+  boot_func <- function(x, i) func(x[i])
+  
+  b <- tryCatch({
+    boot(v, boot_func, R = n_iter)
+  }, error = function(e) {
+    message("Bootstrapping failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(b)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  ci <- tryCatch({
+    boot.ci(b, conf = conf, type = "perc")
+  }, error = function(e) {
+    message("Confidence interval computation failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(ci) || is.null(ci$percent)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  return(c("lower" = ci$percent[4], "upper" = ci$percent[5]))
+}
+
+df_ci <- agedata_clean %>%
+  group_by(age) %>%
+  summarise(
+    ci_result = list(boot_ci(kills, mean)),
+    mean_kills = mean(kills)
+  ) |>
+  unnest_wider(ci_result) |>
+  rename(ci_lower = `lower`, ci_upper = `upper`)
+print(df_ci)
+
+df_ci |>
+  ggplot() +
+  geom_errorbarh(mapping = aes(y = age, 
+                               xmin = ci_lower, xmax = ci_upper,
+                               color = '95% C.I.'), height = 0.5) +
+  geom_point(mapping = aes(x = mean_kills, y = age,
+                           color = 'Group Mean'),
+             shape = '|',
+             size = 5) +
+  scale_color_manual(values = c('95% C.I.' = 'black', 'Group Mean' = 'lightblue')) +
+  labs(title = "Mean Kills By Age Group",
+       x = "Mean Kills",
+       y = "Age Group",
+       color = '')
+
+```
+
+The ANOVA test provides a p-value of .0258 which means that there is only a 2.58% chance that the means are all equal, and we assume that there is at least one that is different.
+
+To determine which age group is most likely unlike the rest, I used the pairwise t test to compare each age group. From the results we can see that the age group of players 40-50 is most unlike the rest. Using the bootstrapping method, we can visualize this more clearly. The visualization shows that the 40-50's age group has a lower mean number of kills. This analysis is not conclusive of if there is a group that gets more kills than another. From looking at the boxplot we would assume that the '50 and Up' group would also be different, but since we have so few data points in this category and this is a factor with bonferroni, this could account for the difference.
+
+### Aces
+
+```{r}
+agedata_clean <- agedata %>%
+  filter(!is.na(aces) & aces > 0)
+
+agedata_clean |>
+  ggplot() +
+  geom_boxplot(mapping = aes(y = aces, x = age, fill = age), 
+               color = "black",
+               alpha = 0.6) +
+  scale_y_log10() +
+  annotation_logticks(sides = 'l') +
+  labs(title = "Total Aces by Age Group",
+       x = "Age Group",
+       y = "Total Aces (log scale)") +
+  geom_text(
+    data = agedata_clean |>
+      group_by(age) |>
+      summarise(mean_aces = mean(aces, na.rm = TRUE)),
+    aes(x = age, y = mean_aces, label = paste("Mean:", round(mean_aces, 1))),
+    color = "black",
+    size = 3,
+    vjust = -0.5,
+    hjust = 0.5
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+The above box plot uses individual data from the subset about a single players aces and associated age group. The box plot does not show that there is any significant differences between age groups but in order to further assess the differences we will conduct an anova test and pairwise t test. The null hypothesis for this test is that there is no difference in mean aces between age groups. We will also use a p-value of .05 as I did in the previous hypothesis tests as the standard for rejecting the null hypothesis.
+
+```{r}
+acetest <- aov(aces ~ age, data = agedata)
+summary(acetest)
+
+pairwise.t.test(agedata$aces, agedata$age, p.adjust.method = "bonferroni")
+```
+
+```{r}
+agedata_clean <- na.omit(agedata)
+
+boot_ci <- function(v, func = median, conf = 0.95, n_iter = 100) {
+  boot_func <- function(x, i) func(x[i])
+  
+  b <- tryCatch({
+    boot(v, boot_func, R = n_iter)
+  }, error = function(e) {
+    message("Bootstrapping failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(b)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  ci <- tryCatch({
+    boot.ci(b, conf = conf, type = "perc")
+  }, error = function(e) {
+    message("Confidence interval computation failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(ci) || is.null(ci$percent)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  return(c("lower" = ci$percent[4], "upper" = ci$percent[5]))
+}
+
+df_ci <- agedata_clean %>%
+  group_by(age) %>%
+  summarise(
+    ci_result = list(boot_ci(aces, mean)),
+    mean_aces = mean(aces)
+  ) |>
+  unnest_wider(ci_result) |>
+  rename(ci_lower = `lower`, ci_upper = `upper`)
+print(df_ci)
+
+df_ci |>
+  ggplot() +
+  geom_errorbarh(mapping = aes(y = age, 
+                               xmin = ci_lower, xmax = ci_upper,
+                               color = '95% C.I.'), height = 0.5) +
+  geom_point(mapping = aes(x = mean_aces, y = age,
+                           color = 'Group Mean'),
+             shape = '|',
+             size = 5) +
+  scale_color_manual(values = c('95% C.I.' = 'black', 'Group Mean' = 'lightblue')) +
+  labs(title = "Mean Aces By Age Group",
+       x = "Mean Aces",
+       y = "Age Group",
+       color = '')
+```
+
+The ANOVA test provides a p-value of .5 which means that there is a 50% chance that the differences in means are by chance, and we can accept the null hypothesis that there is no difference in mean aces between age groups.
+
+For practice we still completed the pairwise t test even though the ANOVA test does not suggest any reason to do so. The resulting p-values line up with the results of our ANOVA test that there is no difference between means.
+
+### Blocks
+
+```{r}
+agedata_clean <- agedata %>%
+  filter(!is.na(blocks) & blocks > 0)
+
+agedata_clean |>
+  ggplot() +
+  geom_boxplot(mapping = aes(y = blocks, x = age, fill = age), 
+               color = "black",
+               alpha = 0.6) +
+  scale_y_log10() +
+  annotation_logticks(sides = 'l') +
+  labs(title = "Total Blocks by Age Group",
+       x = "Age Group",
+       y = "Total Blocks (log scale)") +
+  geom_text(
+    data = agedata_clean |>
+      group_by(age) |>
+      summarise(mean_blocks = mean(blocks, na.rm = TRUE)),
+    aes(x = age, y = mean_blocks, label = paste("Mean:", round(mean_blocks, 1))),
+    color = "black",
+    size = 3,
+    vjust = -0.5,
+    hjust = 0.5
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+The above box plot uses individual data from the subset about a single players blocks and associated age group. The box plot does not show that there is any significant differences between the mean of each age group but in order to further assess the differences we will conduct an anova test and pairwise t test. The null hypothesis for this test is that there is no difference in mean blocks between age groups. We will also use a p-value of .05 as I did in the previous hypothesis tests as the standard for rejecting the null hypothesis.
+
+```{r}
+blocktest <- aov(blocks ~ age, data = agedata)
+summary(blocktest)
+
+pairwise.t.test(agedata$blocks, agedata$age, p.adjust.method = "bonferroni")
+```
+
+```{r}
+agedata_clean <- na.omit(agedata)
+
+boot_ci <- function(v, func = median, conf = 0.95, n_iter = 100) {
+  boot_func <- function(x, i) func(x[i])
+  
+  b <- tryCatch({
+    boot(v, boot_func, R = n_iter)
+  }, error = function(e) {
+    message("Bootstrapping failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(b)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  ci <- tryCatch({
+    boot.ci(b, conf = conf, type = "perc")
+  }, error = function(e) {
+    message("Confidence interval computation failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(ci) || is.null(ci$percent)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  return(c("lower" = ci$percent[4], "upper" = ci$percent[5]))
+}
+
+df_ci <- agedata_clean %>%
+  group_by(age) %>%
+  summarise(
+    ci_result = list(boot_ci(blocks, mean)),
+    mean_blocks = mean(blocks)
+  ) |>
+  unnest_wider(ci_result) |>
+  rename(ci_lower = `lower`, ci_upper = `upper`)
+print(df_ci)
+
+df_ci |>
+  ggplot() +
+  geom_errorbarh(mapping = aes(y = age, 
+                               xmin = ci_lower, xmax = ci_upper,
+                               color = '95% C.I.'), height = 0.5) +
+  geom_point(mapping = aes(x = mean_blocks, y = age,
+                           color = 'Group Mean'),
+             shape = '|',
+             size = 5) +
+  scale_color_manual(values = c('95% C.I.' = 'black', 'Group Mean' = 'lightblue')) +
+  labs(title = "Mean Blocks By Age Group",
+       x = "Mean Blocks",
+       y = "Age Group",
+       color = '')
+```
+
+The ANOVA test provides a p-value of 1.94e-12 which means that there is a very small chance that the means are all equal, and we would assume that there is at least one age group that differs from the rest.
+
+To determine which age group is most likely unlike the rest, I used the pairwise t test to compare each age group. From the results we can see that the age group of players 30-40 is most unlike the rest. We visualized this difference using the bootstrapping method and creating a graph to view the confidence intervals. We can conclude that the difference between this age group and others is statistically significant and those in their 30s-40s generally have a higher mean number of blocks.
+
+### Digs
+
+```{r}
+agedata_clean <- agedata %>%
+  filter(!is.na(digs) & digs > 0)
+
+agedata_clean |>
+  ggplot() +
+  geom_boxplot(mapping = aes(y = digs, x = age, fill = age), 
+               color = "black",
+               alpha = 0.6) +
+  scale_y_log10() +
+  annotation_logticks(sides = 'l') +
+  labs(title = "Total Digs by Age Group",
+       x = "Age Group",
+       y = "Total Digs (log scale)") +
+  geom_text(
+    data = agedata_clean |>
+      group_by(age) |>
+      summarise(mean_digs = mean(digs, na.rm = TRUE)),
+    aes(x = age, y = mean_digs, label = paste("Mean:", round(mean_digs, 1))),
+    color = "black",
+    size = 3,
+    vjust = -0.5,
+    hjust = 0.5
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set3")
+```
+
+The above box plot uses individual data from the subset about a single players digs and associated age group. The box plot shows more differences between the mean of each age group than other skills, but in order to further assess the differences we will conduct an anova test and pairwise t test. The null hypothesis for this test is that there is no difference in mean digs between age groups. We will also use a p-value of .05 as I did in the previous hypothesis tests as the standard for rejecting the null hypothesis.
+
+```{r}
+digtest <- aov(digs ~ age, data = agedata)
+summary(digtest)
+
+pairwise.t.test(agedata$digs, agedata$age, p.adjust.method = "bonferroni")
+```
+
+```{r}
+agedata_clean <- na.omit(agedata)
+
+boot_ci <- function(v, func = median, conf = 0.95, n_iter = 100) {
+  boot_func <- function(x, i) func(x[i])
+  
+  b <- tryCatch({
+    boot(v, boot_func, R = n_iter)
+  }, error = function(e) {
+    message("Bootstrapping failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(b)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  ci <- tryCatch({
+    boot.ci(b, conf = conf, type = "perc")
+  }, error = function(e) {
+    message("Confidence interval computation failed: ", e$message)
+    return(NULL)
+  })
+  
+  if (is.null(ci) || is.null(ci$percent)) {
+    return(c("lower" = NA, "upper" = NA))
+  }
+  return(c("lower" = ci$percent[4], "upper" = ci$percent[5]))
+}
+
+df_ci <- agedata_clean %>%
+  group_by(age) %>%
+  summarise(
+    ci_result = list(boot_ci(digs, mean)),
+    mean_digs = mean(digs)
+  ) |>
+  unnest_wider(ci_result) |>
+  rename(ci_lower = `lower`, ci_upper = `upper`)
+print(df_ci)
+
+df_ci |>
+  ggplot() +
+  geom_errorbarh(mapping = aes(y = age, 
+                               xmin = ci_lower, xmax = ci_upper,
+                               color = '95% C.I.'), height = 0.5) +
+  geom_point(mapping = aes(x = mean_digs, y = age,
+                           color = 'Group Mean'),
+             shape = '|',
+             size = 5) +
+  scale_color_manual(values = c('95% C.I.' = 'black', 'Group Mean' = 'lightblue')) +
+  labs(title = "Mean Digs By Age Group",
+       x = "Mean Digs",
+       y = "Age Group",
+       color = '')
+```
+
+The ANOVA test provides a p-value of 2e-16 which means that there is a very small chance that the means are all equal, and we would assume that there is at least one age group that differs from the rest.
+
+To determine which age group is most likely unlike the rest, I used the pairwise t test to compare each age group. From the results we can see that the age group of players 20-30 is most unlike the rest. The bootstrapping method was then used in order to create a visualization of the confidence intervals. It shows that the age group containing players age 20-30 has the highest mean number of digs per match. We can conclude that the difference between this age group and others is statistically significant.
+
+## Conclusions for In-Game Statistics by Age
+
+After completing analysis, we can see that there is only one skill that was inconclusive across different age groups. We did not see a difference of mean aces among different genders and therefore must conclude that the differences in means is not statistically significant.
+
+When looking at kills, we saw that there was a small p-value and determined that the group that differed from the rest was the age group 40-50. While we had hoped to see that one age group excelled from the rest, we found instead that this age group is lower than the rest.
+
+For mean number of blocks, the ANOVA test revealed a small p-value as well and the t test and confidence intervals showed that the group that differed from the rest was the age group of players 30-40. In this case we found that this age group's mean differs from the rest significantly and is higher.
+
+Finally, I analyzed digs for each age group. With a small p-value as a result of the ANOVA test, I continued analysis with a pairwise t test and bootstrapping to visualize the confidence intervals. It was then determined that the 20s-30s age group excelled in this area with a mean number of digs that was significantly different than the rest.
+
+## Actionable Recommendations
+
+The results of my analysis of the different skills may not have yielded exactly what I was looking for, but it did provide results that can be beneficial. I would recommend that players between the age 20-30 train lots of defense so that they can compete with others at their level. With this age group having a higher mean digs than others, players need to be strong in this area.
+
+Players age 30-40 have the highest mean blocks so we would encourage these athletes to work on all skills, but specifically blocking. When competing in this age group, players tend to be better at blocking so athletes should practice this skill before entering into competition at this age.
+
+For players age 40-50, we see that they are similar to different age groups in all skills besides kills. In this area they have a statistically significant lower mean. With this information we would advise athletes at this age to practice this skill so that they can excel in their age group. Players in this age group with a higher mean number of kills would be outliers compared to the majority and this could be greatly beneficial for their game.

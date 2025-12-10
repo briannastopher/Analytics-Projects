@@ -1,0 +1,142 @@
+---
+title: "Data Dive 12"
+author: "Brianna Stopher"
+date: "2024-11-18"
+output: html_document
+---
+
+```{r}
+library(tsibble)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+### Tsibble and Plots
+
+```{r}
+volley_data$newdate <- format(as.Date(volley_data$date, format ="%m/%d/%Y"), "%Y/%m/%d")
+
+tourns_ <- volley_data |>
+  select(newdate, tournament, country) |>
+  group_by(newdate) |>
+  summarise(count = n(), .groups = 'drop')
+
+tourns_$newdate <- as.Date(tourns_$newdate)
+
+tourns_ts <- tourns_ %>% 
+  as_tsibble(index = newdate)
+
+
+```
+
+```{r}
+ggplot(tourns_ts, aes(x = newdate, y = count)) +
+  geom_line() +
+  labs(title = "Match Count Over Time (Daily)",
+       x = "Date",
+       y = "Count of Matches") +
+  theme_minimal()
+
+```
+
+```{r}
+tourns_weekly <- tourns_ts %>%
+  index_by(week = ~ floor_date(.x, "week")) %>%
+  summarise(count = sum(count))
+
+ggplot(tourns_weekly, aes(x = week, y = count)) +
+  geom_line() +
+  labs(title = "Match Count Over Time (Weekly)",
+       x = "Week",
+       y = "Count of Matches") +
+  theme_minimal()
+```
+
+```{r}
+tourns_monthly <- tourns_ts %>%
+  index_by(month = ~ floor_date(.x, "month")) %>%
+  summarise(count = sum(count))
+
+# Plotting the monthly data
+ggplot(tourns_monthly, aes(x = month, y = count)) +
+  geom_line() +
+  labs(title = "Match Count Over Time (Monthly)",
+       x = "Month",
+       y = "Count of Matches") +
+  theme_minimal()
+```
+
+What stands out immediately is that the most beach volleyball matches are played in the summer months. We would expect this since it is an outdoor sport and it is not popular in the winter and cold. Therefore it is not surprising that the data ranges from April to October. While some of these months are not super warm for us here in the US, they may be warmer in other countries and this may be what those data points are coming from.
+
+### Linear Regression
+
+```{r}
+plot_with_regression <- function(data, title, x_label, y_label) {
+  lm_model <- lm(count ~ as.numeric(newdate), data = data)
+  
+  ggplot(data, aes(x = newdate, y = count)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE,
+                color = "red", linetype = "dashed") +
+    labs(title = title,
+         x = x_label,
+         y = y_label) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+}
+
+ggplot(tourns_ts, aes(x = newdate, y = count)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Match Count Over Time (Daily) with Linear Regression",
+       x = "Date",
+       y = "Count of Matches") +
+  theme_minimal()
+
+ggplot(tourns_weekly, aes(x = week, y = count)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Match Count Over Time (Weekly) with Linear Regression",
+       x = "Week",
+       y = "Count of Matches") +
+  theme_minimal()
+
+ggplot(tourns_monthly, aes(x = month, y = count)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Match Count Over Time (Monthly) with Linear Regression",
+       x = "Month",
+       y = "Count of Matches") +
+  theme_minimal()
+
+```
+
+It seems that the trend is upward throughout the months from April to October. I think this is reasonable for what we would conclude with just using reasoning.
+
+### Smoothing
+
+```{r}
+ggplot(tourns_ts, aes(x = newdate, y = count)) +
+  geom_point() +
+  geom_smooth(method = "loess", color = "blue") +
+  labs(title = "Match Count Over Time with Loess Smoothing",
+       x = "Date",
+       y = "Count of Matches") +
+  theme_minimal()
+
+```
+
+The trend lines show an increase in matches in June and a decrease at some point in August. Again, this is to be expected since this is when beach volleyball is in its prime season.
+
+```{r}
+acf(tourns_ts$count, lag.max = 365, main = "ACF for Daily Match Count")
+pacf(tourns_ts$count, lag.max = 365, main = "PACF for Daily Match Count")
+
+```
+
+None of the spikes seem to be super significant. I don't see anything that indicates any seasonality.

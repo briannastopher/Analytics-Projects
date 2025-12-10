@@ -1,0 +1,95 @@
+---
+title: "Data Dive 10"
+author: "Brianna Stopher"
+date: "2024-11-04"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(boot)
+library(lindia)
+library(ggthemes)
+library(ggrepel)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+# Logistic Regression
+
+### Binary variable= gender
+
+### Explanatory variable = winning player 1 height
+
+The gender column is turned into a binary variable where 1 is associated with a male and 0 is associated with female. Here we add the column to the dataset so it can be used in the model.
+
+```{r}
+volley_data$is_male <- ifelse(volley_data$gender == "M", 1, 0)
+head(volley_data)
+```
+
+W_p1_hgt is chosen to be the explanatory variable. The standard regression has a linear relationship but in this case we must find a new function to model the non-linear regression.
+
+```{r}
+volley_data|>
+  ggplot(mapping = aes(x = w_p1_hgt, y = is_male)) +
+  geom_jitter(width = 0.1, height = 0.1, shape = 'O', size = 3) +
+  geom_smooth(method = 'lm', se = FALSE) +
+  labs(title = "Modeling a Binary Response with OLS") +
+  theme_minimal()
+```
+
+We create the model and summarize to find the intercept and slope of the fitted regression.
+
+```{r}
+model<- glm(is_male ~ w_p1_hgt, data= volley_data, family= binomial)
+summary(model)
+```
+
+Extracting these values, we can insert them into the sigmoid function to fit our regression line to the data.
+
+```{r}
+intercept <- coef(model)[1]
+slope <- coef(model)[2]
+sigmoid <- function(x) {
+  1/ (1 + exp(-(intercept + slope *x)))
+}
+```
+
+This is the final logistic regression model with the fitted sigmoid function. The value of the intercept of -63.36 mean that when height is zero, the predicted log- odds of the player being male are extremely low, and slope of .87 indicates that for each unit increase in height, the log- odds of the player being male increase by .87. Therefore, as height increases, the probability of is_male also increases.
+
+```{r}
+volley_data |>
+  ggplot(mapping = aes(x = w_p1_hgt, y = is_male)) +
+  geom_jitter(width = 0.1, height = 0.1, shape = 'O', size = 3) +
+  geom_function(fun = sigmoid, color = 'blue', linewidth = 1) +
+  labs(title = "Modeling a Binary Response with Sigmoid",
+       subtitle =paste("Estimation: B0 =",round(intercept, 2), "and B1 =", round(slope, 2))) +
+  scale_y_continuous(breaks = c(0, 1)) +
+  theme_minimal()
+```
+
+# Confidence Interval
+
+```{r}
+model <- glm(is_male ~ w_p1_hgt, data = volley_data, family = binomial)
+summary(model)
+
+coef_value <- coef(model)["w_p1_hgt"]
+std_error <- summary(model)$coefficients["w_p1_hgt", "Std. Error"]
+```
+
+```{r}
+z <- qnorm(0.975)
+lower <- coef_value - z * std_error
+upper <- coef_value + z * std_error
+ci <- c(lower, upper)
+ci
+```
+
+We are 95% confident that for each unit increase in height, the log- odds of being male increases by an amount between .805 and .926. This suggests a positive association between height and the likelihood of being male, with the effect being statistically significant if the interval does not include zero.

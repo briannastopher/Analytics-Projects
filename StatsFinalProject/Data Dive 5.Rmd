@@ -1,0 +1,61 @@
+---
+title: "Data Dive 5"
+output: html_document
+date: "2024-09-25"
+---
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+1\.
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+```{r}
+unclear_list <- list(
+  hitpct = volley_data$w_p1_tot_hitpct,
+  blocks = volley_data$w_p1_tot_blocks,
+  digs = volley_data$w_p1_tot_digs
+)
+print(unclear_list)
+```
+
+These columns are somewhat straightforward for someone that knows volleyball and its common terms, but they are not as intuitive for others. The three columns that I chose are w_p1_tot_hitpct (winning team player 1 total hitting percentage), w_p1_tot_blocks (winning team player 1 total blocks), and w_p1_tot_digs (winning team player 1 total digs). While I could deduce that this is what these columns meant without looking at the documentation, it was a bit unclear how they were calculated. If I did not read the documentation, I would have assumed that blocks included block touches and not just blocks that resulted in a point, and I would have been unsure about which passing moves were counted as digs. Without the documentation to clarify the meaning of each column, we could have came to conclusions that were not necessarily true.
+
+2\.
+
+One column that is still a bit unclear after reading the documentation is the meaning of w_p1_tot_errors. The documentation describes this as 'winner player 1 mistakes', but it is unclear if this means all errors or just one specific type of error. This value is used to calculate the players hitting percentage so I can conclude that it is only hitting errors, but this is unclear in the documentation and column name.
+
+Another column that I am unclear on is w_rank/l_rank. The documentation describes these columns as 'winning team rank' and 'losing team rank'. This is confusing because it is not intuitive and requires some extra description. Is this the team's rank coming into the tournament? Going into the game described? Or is it how the team finished? It is hard to use this column to make conclusions since the meaning is unclear and the values are also not straightforward. We would expect a number value for rank, but this column includes some values such as Q17 and 22, Q9.
+
+3\.
+
+```{r}
+uncleardata <- volley_data %>%
+  group_by(w_rank) %>%
+  summarise(Frequency = n()) %>%
+  arrange(desc(Frequency))
+
+print(uncleardata)
+
+ggplot(uncleardata, aes(x= reorder(w_rank, -Frequency), y= Frequency)) +
+  geom_bar(stat= "identity", fill = "blue") +
+  labs(title = "rank frequencies",
+       x= "rank",
+       y= "frequency") +
+  theme_minimal()
+```
+
+It is a bit hard to read in the graph, but there are many ranks included in the dataset that are only used 1-10 times. It is hard to make conclusions with this data when it is so widespread over different values that we do not completely know how to define. We would expect different values since it is a tournament, but the combinations of numbers and the 'Q' ranks give so many unique values that it brings issues when evaluating these columns.

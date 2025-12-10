@@ -1,0 +1,115 @@
+---
+title: "Data Dive 8"
+author: "Brianna Stopher"
+date: "2024-10-21"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(boot)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+# ANOVA calculation
+
+### Continuous column- w_p1_hgt
+
+### Categorical column- w_p1_country
+
+### Null Hypothesis- Average height is equal across all countries.
+
+```{r}
+hgt_test <- aov(w_p1_hgt ~ w_p1_country, data = volley_data)
+summary(hgt_test)
+```
+
+```{r}
+clean_data <- na.omit(volley_data[, c("w_p1_hgt", "w_p1_country")])
+result <- pairwise.t.test(volley_data$w_p1_hgt, volley_data$w_p1_country, p.adjust.method = "bonferroni")
+print(result)
+```
+
+```{r}
+boot_ci <- function (v, func = median, conf = 0.95, n_iter = 100) {
+  # the function we want to run on each iteration i
+  boot_func <- \(x, i) func(x[i])
+  
+  # the boot instance, running the function on each iteration
+  b <- boot(v, boot_func, R = n_iter)
+  b <- boot.ci(b, conf = conf, type = "perc")
+  
+  # return just the lower and upper values
+  return(c("lower" = b$percent[4],
+           "upper" = b$percent[5]))
+}
+```
+
+```{r}
+df_ci <- clean_data |>
+  group_by(w_p1_country) |>
+  summarise(ci_lower = if(length(unique(w_p1_hgt)) > 1) {
+              boot_ci(w_p1_hgt, mean)['lower']
+            } else {
+              NA
+            },
+            mean_hgt = mean(w_p1_hgt, na.rm = TRUE),
+            ci_upper = if (length(unique(w_p1_hgt)) > 1) {
+              boot_ci(w_p1_hgt, mean)['upper']
+            } else {
+              NA
+            }
+  )
+
+df_ci
+```
+
+```{r}
+df_ci |>
+  ggplot() +
+  geom_errorbarh(mapping = aes(y = w_p1_country, 
+                               xmin=ci_lower, xmax=ci_upper,
+                               color = '95% C.I.'), height = 0.5) +
+  geom_point(mapping = aes(x = mean_hgt, y = w_p1_country,
+                           color = 'Group Mean'),
+             shape = '|',
+             size = 5) +
+  scale_color_manual(values=c('black', 'orange')) +
+  labs(title = "Player Height by Country",
+       x = "Player Height (in inches)",
+       y = "Player Country",
+       color = '')
+```
+
+-   Given such as small p-value for the large dataset, we can safely conclude that the null hypothesis is likely not true.
+
+-   After testing the data, it would be safe to assume that player heights are not equal between countries.
+
+# Linear Regression
+
+### Continuous column- w_p1_hgt
+
+### Continuous column- w_p1_age
+
+```{r}
+clean_data2 <- na.omit(volley_data[, c("w_p1_hgt", "w_p1_age")])
+clean_data2 |>
+  ggplot(mapping = aes(x = w_p1_age, y = w_p1_hgt)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE, color = 'darkblue')
+```
+
+```{r}
+model <- lm(w_p1_hgt ~ w_p1_age, clean_data2)
+model$coefficients
+```
+
+-   If w_p1_age = 0, then the *expected value* for w_p1_hgt is 72.51 inches.
+-   For every unit increase of w_p1_age, *on average*, w_p1_hgt will increase by about 0.0421 inches.
+-   We can see that the height and age might have a slight positive correlation, but it is not significant. Therefore there is really no recommendations of age or time.

@@ -1,0 +1,88 @@
+---
+title: "Data Dive week 2"
+output: html_document
+date: "2024-09-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyr)
+library(tidyverse)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Data Dive Week 2
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+```{r}
+summary(volley_data$w_p1_age)
+```
+
+This first numeric summary shows a summary of the average values of one player on the winning team of each match. In just seeing this it seems like the max value is a bit of an outlier compared to the rest of the data. Most players are aged between 23 and 31. This is somewhat similar to what we would assume based on the years that most people play competitive sports. I think there could be further analysis in finding an average of all players that we have data for and looking at if the averages are different in winning and losing teams.
+
+```{r}
+table(volley_data$country)
+```
+
+This numeric summary shows the counts of countries where each tournament is played. We can see that the most tournaments are held within the United States while the least is in Korea. These values are higher than the actual number of tournaments in each country since there is a count for each game. Further analysis could be grouping the tournaments so that each one is only counted once. We would then be able to determine the true amount of tournaments hosted in each country.
+
+## Questions:
+
+1.  What is the average height of male players?
+2.  What is the country with the highest win percentage based on the athlete's home country?
+3.  What is the average kill percentage of winning versus losing teams?
+
+```{r}
+#average height of male players
+male_players <- volley_data[volley_data$gender == "M", ]
+
+male_players$average_w_hgt <- ((male_players$w_p1_hgt + male_players$w_p2_hgt)/2)
+
+male_players$average_l_hgt <- ((male_players$l_p1_hgt+ male_players$l_p2_hgt)/2)
+
+male_players$male_hgt <- ((male_players$average_w_hgt+ male_players$average_l_hgt)/2)
+summary(male_players$male_hgt)
+```
+
+This code answers my first question of the average height of male volleyball players. The data is in inches so we can see that the mean of male players is about 6' 4". This data seems to be pretty equally distributed with a min of 72.5" and a max of 80.0".
+
+```{r}
+killdata <- volley_data |>
+  group_by(gender) |>
+  reframe(kill_perc = round(w_p1_tot_kills/w_p1_tot_attacks,2))
+  
+
+killdata |>
+  ggplot() +
+    geom_histogram(mapping = aes(x = kill_perc, fill = gender))
+  
+```
+
+This plot shows the average kill percentage of one of the winning players. The plot is separated by gender. We can see that there are more male players that have data for kill percentages and they also tend to be higher. Null values are excluded but some athletes will be null for kill percentage because they may not attack or not have any kills. We have one outlier where an athlete had a 1.0 kill percentage which means that every attack attempt resulted in a kill.
+
+```{r}
+killdata_mean <- volley_data |>
+  group_by(gender) |>
+  reframe(kill_perc = mean(round(w_p1_tot_kills/w_p1_tot_attacks,2),na.rm=TRUE))
+print(killdata_mean)
+
+library(ggplot2)
+
+volleyplot <- ggplot(killdata_mean,aes(x = gender, y = kill_perc, fill = gender)) +
+  geom_bar(stat = "identity") +
+  theme_minimal()
+print(volleyplot)
+```
+
+This plot builds off of the previous by showing us the the average of male versus female kill percentages. The average is actually very similar with the male average being about .598 and the female average being about .549. This plot only includes data from one of the winning players from each match so a good way to elaborate on this would be to see if the kill percentage was different in the winning team versus the losing team.

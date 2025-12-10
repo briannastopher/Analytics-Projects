@@ -1,0 +1,149 @@
+---
+title: "Data Dive 3"
+output:
+  html_document: default
+  pdf_document: default
+date: "2024-09-17"
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+```{r}
+gender_data <- volley_data |>
+  group_by(gender) |>
+  summarise(mean_w1age = mean(w_p1_age, na.rm= TRUE),
+            mean_w2age = mean(w_p2_age, na.rm= TRUE),
+            mean_l1age = mean(l_p1_age, na.rm= TRUE),
+            mean_l2age = mean(l_p2_age, na.rm= TRUE), 
+            mean_age = ((mean_w1age + mean_w2age + mean_l1age + mean_l2age) /4))
+print(gender_data)
+
+genderplot <- ggplot(gender_data,aes(x = gender, y = mean_age, fill = gender)) +
+  geom_bar(stat = "identity") +
+  theme_minimal()
+print(genderplot)
+
+```
+
+```{r}
+gender_data_count <- volley_data |>
+  group_by(gender) |>
+  summarise(count= n()) |>
+  mutate(probability= count/ sum(count))
+gender_data_count
+```
+
+```{r}
+gender_data_count$tag <- cut(gender_data_count$count, breaks= c(0, 2000, Inf), labels= c("Low probability", "High probability"))
+gender_data_count
+```
+
+This table groups the data by gender and then summarizes each line by player age. We then also have the average of all men and women and can see that the average of the mens age is about 28.6 while the average of women is about 26.9.
+
+Hypothesis- There is a higher probability of male than female because more male tournaments are hosted in beach volleyball than womens tournaments.
+
+```{r}
+country_age <- volley_data |>
+  group_by(country) |>
+  summarise(mean_w1agec = mean(w_p1_age, na.rm= TRUE),
+            mean_w2agec = mean(w_p2_age, na.rm= TRUE),
+            mean_l1agec = mean(l_p1_age, na.rm= TRUE),
+            mean_l2agec = mean(l_p2_age, na.rm= TRUE),
+            mean_age = ((mean_w1agec + mean_w2agec + mean_l1agec + mean_l2agec) /4)) |>
+  arrange(desc(mean_age))
+print(country_age)
+
+countryplot <- ggplot(country_age,aes(x = country, y = mean_age, fill = country)) +
+  geom_bar(stat = "identity") +
+  theme_minimal()
+print(countryplot)
+```
+
+```{r}
+country_age_count <- volley_data |>
+  group_by(country) |>
+  summarise(count= n()) |>
+  mutate(probability= count/ sum(count))
+country_age_count
+```
+
+```{r}
+country_age_count$tag <- cut(country_age_count$count, breaks= c(0, 200, Inf), labels= c("Low probability", "High probability"))
+country_age_count
+```
+
+The data is now grouped by country and still summarized by each player. Here country refers to the country in which the games were played and the players age is the 4 different players that participated in that match. This table is a bit more informative in that we can see that the average age from different countries varies quite a bit. For example, the average age in Austria is around 25 while the average in Czech Republic is about 29. I also found an average of all four players to make this table more easy to draw conclusions from which is what is displayed in the graph.
+
+Hypothesis- We could hypothesize that the countries with the highest probability are where most players are from and therefore they host the most beach volleyball tournaments.
+
+```{r}
+bracket_age <- volley_data |>
+  group_by(bracket) |>
+  summarise(mean_w1ageb= mean(w_p1_age, na.rm= TRUE),
+            mean_w2ageb= mean(w_p2_age, na.rm= TRUE),
+            mean_l1ageb= mean(l_p1_age, na.rm= TRUE),
+            mean_l2ageb= mean(l_p1_age, na.rm= TRUE),
+            mean_age = ((mean_w1ageb + mean_w2ageb + mean_l1ageb + mean_l2ageb) /4))
+print(bracket_age)
+
+bracketplot <- ggplot(bracket_age,aes(x = bracket, y = mean_age, fill = bracket)) +
+  geom_bar(stat = "identity") +
+  theme_minimal()
+print(bracketplot)
+```
+
+```{r}
+bracket_age_count <- volley_data |>
+  group_by(bracket) |>
+  summarise(count= n()) |>
+  mutate(probability= count/ sum(count))
+bracket_age_count
+```
+
+```{r}
+bracket_age_count$tag <- cut(bracket_age_count$count, breaks= c(0, 1000, Inf), labels= c("Low probability", "High probability"))
+bracket_age_count
+```
+
+Finally, the data was grouped by bracket and the table was created to show average player ages. This table helps us to see if there is a trend of player age and success in tournaments. Unfortunately since different tournaments classify their tournament brackets by different things, this table is not as conclusive as I had hoped. We can see some differences, for example pool H has an average age of about 25.6 while Finals looks to be closer to 31.6. We would need more investigation here to draw any real conclusions but we could hypothesize that maybe this is somewhat of a trend.
+
+Hypothesis- The highest probability brackets are winners and qualifier by far and this could be because in certain circuits these are the only brackets. For example, in AVP circuit they may only have two brackets, while in FIVB there may be others.
+
+```{r}
+country_gender <- volley_data |>
+  group_by(country) |>
+  count(gender) |>
+  pluck("country")
+print(country_gender)
+
+country_gen <- volley_data |>
+  filter(country%in%country_gender) |>
+  ggplot() + 
+  geom_bar(mapping = aes(x = country , fill = gender)) +
+  theme_minimal() +
+  scale_fill_brewer(palette = 'Dark2')
+
+country_gen
+
+volley_data |>
+  group_by(country) |>
+  count(gender)
+
+```
+
+The smallest group here is the women in Korea. In this data set we only have 20 instances of this. We could conclude that if a player were to be chosen by random, there is only a 20/4,206 chance that they would be a woman playing in Korea. This table is interesting because if we think about what it really means, when we sort by country, each entry that we get is a match played in that country. Therefore a count of 20 for gender in Korea really means that there were 20 womens matches played in Korea. This does not mean that there are 20 Korean women in this data. To find this we would have to look at the players individual birth countries. So for this data our chances of picking a woman's match that was played in Korea is 20/4,206 and picking a woman that played in Korea is 80/16,824.
+
+There are two combinations that do not exist in these two columns. We have no counts for womens matches in France and no counts for mens matches in Korea. These combinations are missing because there is not a tournament hosted in France that had a womens bracket and no tournament in Korea that had a mens bracket. Seeing how few instances these countries have recorded in general, they must have only a tournament or two hosted by one of the recorded circuits.
