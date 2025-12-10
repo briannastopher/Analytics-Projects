@@ -1,0 +1,215 @@
+---
+title: "Data Dive 7"
+author: "Brianna Stopher"
+date: "2024-10-14"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(ggrepel)
+library(effsize)
+library(pwrss)
+```
+
+```{r}
+volley_data <- read.csv("C:\\Users\\brian\\Downloads\\bvb_matches_2022.csv")
+```
+
+### Null Hypotheses- **The average height of winning player one is the same for womens and mens games.**
+
+### **Alternative Hypothesis- The average height of player one is greater in mens games than womens games.**
+
+## **Neyman-Pearson framework**
+
+```{r}
+avg_height <- volley_data |>
+  group_by(gender) |>
+  summarize(avg_height = mean(w_p1_hgt, na.rm = TRUE)) |>
+  arrange(gender)
+
+avg_height
+```
+
+```{r}
+observed_diff <- (avg_height$avg_height[1] -
+                  avg_height$avg_height[2])
+paste("Observed Difference: ", observed_diff)
+```
+
+```{r}
+bootstrap <- function (x, func=mean, n_iter=10^4) {
+  # empty vector to be filled with values from each iteration
+  func_values <- c(NULL)
+  
+  # we simulate sampling `n_iter` times
+  for (i in 1:n_iter) {
+    # pull the sample (a vector)
+    x_sample <- sample(x, size = length(x), replace = TRUE)
+    
+    # add on this iteration's value to the collection
+    func_values <- c(func_values, func(x_sample))
+  }
+  
+  return(func_values)
+}
+```
+
+```{r}
+avgs_women <- volley_data |>
+  filter(gender == 'W') |>
+  filter(!is.na(w_p1_hgt)) |>
+  pull(w_p1_hgt) |>
+  bootstrap(n_iter = 100)
+
+avgs_men <- volley_data |>
+  filter(gender == 'M') |>
+  filter(!is.na(w_p1_hgt)) |>
+  pull(w_p1_hgt) |>
+  bootstrap(n_iter = 100)
+
+diffs_in_avgs <- avgs_men - avgs_women
+print(diffs_in_avgs)
+```
+
+```{r}
+ggplot() +
+  geom_function(xlim = c(-10, 10), 
+                fun = function(x) dnorm(x, mean = 0, 
+                                        sd = sd(diffs_in_avgs))) +
+  geom_vline(mapping = aes(xintercept = observed_diff,
+                           color = paste("observed: ",
+                                         round(observed_diff)))) +
+  labs(title = "Bootstrapped Sampling Distribution of Gender Height Differences",
+       x = "Difference in Height Calculated",
+       y = "Probability Density",
+       color = "") +
+  scale_x_continuous(breaks = seq(-300, 300, 100)) +
+  theme_minimal()
+```
+
+```{r}
+cohen.d(d = filter(volley_data, gender == 'M') |> 
+          filter(!is.na(w_p1_hgt)) |>
+          pull(w_p1_hgt),
+        f = filter(volley_data, gender == 'W') |>
+          filter(!is.na(w_p1_hgt)) |>
+          pull(w_p1_hgt),)
+```
+
+```{r}
+volley_data |>
+  group_by(gender) |>
+  summarize(sd = sd(w_p1_hgt, na.rm = TRUE),
+            mean = mean(w_p1_hgt, na.rm = TRUE))
+```
+
+```{r}
+sample_size <- pwrss.t.2means(mu1 = 70.83, 
+                               mu2 = 76.28,
+                               sd1 = 2.19,
+                               sd2 = 2.71,
+                               alpha = 0.1, 
+                               power = 0.80, 
+                               kappa = 1)
+print(sample_size)
+```
+
+```{r}
+test <- pwrss.t.2means(mu1 = 70,
+                       mu2 = 75,
+                       sd1 = 1,
+                       kappa = 1,
+                       power = .9, 
+                       alpha = 0.05, 
+                       alternative = "not equal")
+
+plot(test)
+```
+
+This test shows the difference in mean height between men and women that were winning player one in each game. Male players on average have a taller height than female players.
+
+Alpha was chosen to be .05 which means that there is a 5% risk of incorrectly rejecting the null hypothesis. In other words, there is a 5% chance that we would incorrectly assume that mens heights are higher than womens heights of player one. This is a reasonable choice for alpha since there are no serious consequences in this false result.
+
+Power is chosen to be .99 which means there is a .99 probability of correctly rejecting the null hypothesis. This higher percentage is desirable since it indicates that there should be great evidence to reject the null hypothesis and find a correlation between gender and height.
+
+### **Null Hypothesis- Winning player 1 and losing player 1 make the same number of errors in each game.** 
+
+### Alternative Hypothesis- Losing player 1 makes more errors in a game than winning player 1.
+
+## **Fishers Significance Testing**
+
+```{r}
+avg_errors <- volley_data |>
+  filter(!is.na(w_p1_tot_errors) & !is.na(l_p1_tot_errors)) |>
+  select(w_p1_tot_errors, l_p1_tot_errors) |>
+  summarize(
+    avg_w1_errors = mean(w_p1_tot_errors),
+    avg_l1_errors = mean(l_p1_tot_errors)
+  )
+
+
+avg_errors
+
+```
+
+```{r}
+observed_err_diff <- (avg_errors$avg_l1_errors -
+                  avg_errors$avg_w1_errors)
+paste("Observed Difference: ", observed_err_diff)
+```
+
+```{r}
+avgs_winners <- volley_data |>
+  filter(!is.na(w_p1_tot_errors)) |>
+  pull(w_p1_tot_errors) |>
+  bootstrap(n_iter = 100)
+
+avgs_losers <- volley_data |>
+  filter(!is.na(l_p1_tot_errors)) |>
+  pull(l_p1_tot_errors) |>
+  bootstrap(n_iter = 100)
+
+diffs_in_errs <- avgs_losers - avgs_winners
+print(diffs_in_errs)
+```
+
+```{r}
+f_sampling <- function(x) dnorm(x, mean = 0, 
+                                sd = sd(diffs_in_errs))
+
+ggplot() +
+  stat_function(mapping = aes(fill = 'more extreme samples'),
+                fun = f_sampling, 
+                xlim = c(observed_err_diff, 10),
+                geom = "area") +
+  stat_function(mapping = aes(fill = 'more extreme samples'),
+                fun = f_sampling, 
+                xlim = c(-10, -observed_err_diff),
+                geom = "area") +
+  geom_function(xlim = c(-10, 10), 
+                fun = f_sampling) +
+  geom_vline(mapping = aes(xintercept = observed_err_diff,
+                           color = paste("observed: ",
+                                         round(observed_err_diff, 1)))) +
+  labs(title = "Bootstrapped Sampling Distribution of Error Differences",
+       x = "Difference in Error Calculated",
+       y = "Probability Density",
+       color = "",
+       fill = "") +
+  scale_x_continuous(breaks = seq(-10, 10, 10)) +
+  scale_fill_manual(values = 'lightblue') +
+  theme_minimal()
+```
+
+```{r}
+diffs_in_errs_d <- diffs_in_errs - mean(diffs_in_errs)
+
+# proportion of times the difference is more extreme
+paste("p-value =", 
+      sum(abs(observed_err_diff) < abs(diffs_in_errs_d)) /
+        length(diffs_in_errs_d))
+```
+
+The p value of zero suggest that there is very strong evidence to reject the null hypothesis. In this instance, this means that the total errors between winning player one and losing player one are not equal. Losing players have a higher number of errors than winning players on average.
